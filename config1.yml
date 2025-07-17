@@ -1,0 +1,51 @@
+# Logger configuration
+logger:
+  # Logging level (debug: -4, info: 0, warn: 4, error: 8)
+  level: 0
+# Webserver configuration
+http:
+  # Webserver's listening address
+  address: ${CALLI_HTTP_ADDRESS:-:8080}
+# Filesystem configuration
+filesystem:
+  # Filesystem type
+  # Available: [local s3]
+  type: s3
+  # Filesystem options
+  options:
+    endpoint: s3.fr-par.scw.cloud
+    secure: true
+    user: "SCW0YVR6ZT4Q66GDSNRR"
+    secret: "d74b1ed8-2e71-4bcf-9d9f-f41e893497ef"
+    bucket: ptitcloud-archive
+    region: fr-par
+    bucketLookup: dns
+    trace: false
+# Auth configuration
+auth:
+  # Authorized users with their credentials
+  users:
+    - # User's name
+      name: reader
+      # User's password
+      password: reader
+      # User's authorization groups
+      groups:
+        - read-only
+      # User's custom authorization rules
+      rules: []
+    - name: writer
+      password: writer
+      groups:
+        - read-write
+      rules: []
+  # Authorization groups
+  groups:
+    - name: read-only
+      # Groups authorization rules
+      rules:
+        - operation == OP_OPEN && bitand(flag, O_WRITE) == 0
+        - operation == OP_STAT
+    - name: read-write
+      rules:
+        - "true"
