@@ -1,0 +1,149 @@
+{{define "file-list"}}
+<!-- Directory Content -->
+<div class="box">
+  <h1 class="title is-4">
+    {{if ne .Path "/"}}
+    <a 
+      href="{{.ParentPath}}" 
+      class=""
+    >
+      <span class="icon">
+        <i class="fas fa-arrow-left"></i>
+      </span>
+    </a>
+    {{end}}
+    <i class="fas fa-folder-open"></i> 
+    {{if eq .Path "/"}}Root Directory{{else}}{{index .BreadcrumbItems (subtract (len .BreadcrumbItems) 1)}}{{end}}
+  </h1>
+  
+  <!-- Breadcrumb Navigation -->
+  <nav class="breadcrumb mb-4" aria-label="breadcrumbs">
+    <ul>
+      <li>
+        <a href="/">
+          <span class="icon"><i class="fas fa-home"></i></span><span>Home</span>
+        </a>
+      </li>
+      {{range $index, $item := .BreadcrumbItems}}
+        {{if eq $index (subtract (len $.BreadcrumbItems) 1)}}
+          <li class="is-active"><a href="#" aria-current="page">{{$item}}</a></li>
+        {{else}}
+          {{$path := ""}}
+          {{range $i, $p := $.BreadcrumbItems}}
+            {{if le $i $index}}
+              {{$path = print $path "/" $p}}
+            {{end}}
+          {{end}}
+          <li>
+            <a href="{{$path}}">
+              {{$item}}
+            </a>
+          </li>
+        {{end}}
+      {{end}}
+    </ul>
+  </nav>
+
+  <!-- Files Table -->
+  <div class="table-container">
+    <table class="table is-fullwidth is-hoverable">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Size</th>
+          <th>Modified</th>
+          <th>Type</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- Directories -->
+        {{range .Directories}}
+        <tr>
+          <td>
+            <a 
+              href="{{.Path}}" 
+            >
+              <span class="icon">
+                <i class="fas fa-folder has-text-warning"></i>
+              </span>
+              <span>{{.Name}}</span>
+            </a>
+          </td>
+          <td>-</td>
+          <td>{{.ModTime.Format "Jan 02, 2006 15:04:05"}}</td>
+          <td>Directory</td>
+        </tr>
+        {{end}}
+        
+        <!-- Files -->
+        {{range .Files}}
+        <tr>
+          <td>
+            <a href="/dav{{.Path}}" target="_blank">
+              <span class="icon">
+                {{if .IsImage}}
+                  <i class="fas fa-image has-text-info"></i>
+                {{else if .IsText}}
+                  <i class="fas fa-file-alt has-text-success"></i>
+                {{else if .IsArchive}}
+                  <i class="fas fa-file-archive has-text-danger"></i>
+                {{else if .IsAudio}}
+                  <i class="fas fa-file-audio has-text-purple"></i>
+                {{else if .IsVideo}}
+                  <i class="fas fa-file-video has-text-danger"></i>
+                {{else if .IsCode}}
+                  <i class="fas fa-file-code has-text-primary"></i>
+                {{else if .IsPDF}}
+                  <i class="fas fa-file-pdf has-text-danger"></i>
+                {{else}}
+                  <i class="fas fa-file has-text-grey"></i>
+                {{end}}
+              </span>
+              <span>{{.Name}}</span>
+            </a>
+          </td>
+          <td>{{.HumanSize}}</td>
+          <td>{{.ModTime.Format "Jan 02, 2006 15:04:05"}}</td>
+          <td>
+            {{if .IsImage}}Image
+            {{else if .IsText}}Text
+            {{else if .IsArchive}}Archive
+            {{else if .IsAudio}}Audio
+            {{else if .IsVideo}}Video
+            {{else if .IsCode}}Code
+            {{else if .IsPDF}}PDF
+            {{else}}File
+            {{end}}
+          </td>
+        </tr>
+        {{end}}
+        
+        <!-- Empty state -->
+        {{if and (eq (len .Directories) 0) (eq (len .Files) 0)}}
+        <tr>
+          <td colspan="4" class="has-text-centered">
+            <p class="has-text-grey">
+              <i class="fas fa-folder-open"></i> This directory is empty
+            </p>
+          </td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+</div>
+{{end}}
+
+{{define "body"}}
+<section class="section">
+  <div class="container">
+    <div id="explorer-content">
+      {{template "file-list" .}}
+    </div>
+  </div>
+</section>
+{{end}}
+
+{{define "index"}}
+{{template "base" .}}
+{{end}}

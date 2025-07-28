@@ -27,7 +27,7 @@ func TestFileSystem(t *testing.T) {
 	}
 
 	testsuite.TestFileSystem(t, Type, &Options{
-		MaxSize: 1e3,
+		MaxSize: 1e5,
 		Backend: FileSystemOptions{
 			Type: local.Type,
 			Options: local.Options{

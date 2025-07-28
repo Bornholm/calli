@@ -9,14 +9,15 @@ import (
 
 	"github.com/bornholm/calli/internal/authz"
 	"github.com/bornholm/calli/internal/config"
+	"github.com/bornholm/calli/internal/explorer"
 	"github.com/bornholm/calli/internal/setup"
 	"github.com/bornholm/calli/pkg/log"
-	"github.com/bornholm/calli/pkg/webdav/filesystem"
 	"github.com/pkg/errors"
 	"golang.org/x/net/webdav"
 
 	wd "github.com/bornholm/calli/pkg/webdav"
 
+	"github.com/bornholm/calli/pkg/webdav/filesystem"
 	_ "github.com/bornholm/calli/pkg/webdav/filesystem/all"
 )
 
@@ -73,9 +74,12 @@ func main() {
 	fs = authz.NewFileSystem(fs)
 	fs = wd.WithLogger(fs, slog.Default())
 
+	mux := &http.ServeMux{}
+
 	handler := &webdav.Handler{
 		FileSystem: fs,
 		LockSystem: webdav.NewMemLS(),
+		Prefix:     "/dav/",
 		Logger: func(r *http.Request, err error) {
 			ctx := log.WithAttrs(r.Context(), slog.String("method", r.Method), slog.String("path", r.URL.Path))
 			slog.InfoContext(ctx, "http request")
@@ -95,9 +99,12 @@ func main() {
 
 	basicAuth := authz.BasicAuth(users...)
 
+	mux.Handle("/dav/", handler)
+	mux.Handle("/", explorer.NewHandler(fs))
+
 	server := http.Server{
 		Addr:    string(conf.HTTP.Address),
-		Handler: basicAuth(handler),
+		Handler: basicAuth(mux),
 	}
 
 	slog.InfoContext(ctx, "http server listening", slog.String("addr", server.Addr))
