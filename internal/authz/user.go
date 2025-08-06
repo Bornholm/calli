@@ -1,54 +1,11 @@
 package authz
 
-import "slices"
+import "github.com/bornholm/calli/internal/authn"
 
-type User struct {
-	name     string
-	password string
-
-	rules  []Rule
-	groups []*Group
-}
-
-// Rules implements Rules.
-func (u *User) Rules() []Rule {
-	return slices.Collect(func(yield func(Rule) bool) {
-		for _, r := range u.rules {
-			if !yield(r) {
-				return
-			}
-		}
-		for _, g := range u.groups {
-			for _, r := range g.Rules() {
-				if !yield(r) {
-					return
-				}
-			}
-		}
-	})
-}
-
-func (u *User) Name() string {
-	return u.name
-}
-
-func (u *User) Password() string {
-	return u.password
-}
-
-func (u *User) Groups() []*Group {
-	return u.groups
-}
-
-var _ Rules = &User{}
-
-func NewUser(name string, password string, groups []*Group, rules ...Rule) *User {
-	return &User{
-		name:     name,
-		password: password,
-		groups:   groups,
-		rules:    rules,
-	}
+type User interface {
+	authn.User
+	Rules() []Rule
+	Groups() []*Group
 }
 
 type Group struct {

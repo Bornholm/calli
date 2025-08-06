@@ -25,14 +25,16 @@ func (h *Handler) serveIndex(w http.ResponseWriter, r *http.Request) {
 		fsPath = "/"
 	}
 
+	ctx := r.Context()
+
 	// Open the directory
-	dirFile, err := h.fs.OpenFile(r.Context(), fsPath, os.O_RDONLY, 0)
+	dirFile, err := h.fs.OpenFile(ctx, fsPath, os.O_RDONLY, 0)
 	if err != nil {
 		if os.IsNotExist(err) {
 			http.NotFound(w, r)
 			return
 		}
-		slog.ErrorContext(r.Context(), "could not open directory", log.Error(errors.WithStack(err)), slog.String("path", fsPath))
+		slog.ErrorContext(ctx, "could not open directory", log.Error(errors.WithStack(err)), slog.String("path", fsPath))
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
@@ -41,7 +43,7 @@ func (h *Handler) serveIndex(w http.ResponseWriter, r *http.Request) {
 	// Get file info to check if it's a directory
 	fileInfo, err := dirFile.Stat()
 	if err != nil {
-		slog.ErrorContext(r.Context(), "could not stat file", log.Error(errors.WithStack(err)), slog.String("path", fsPath))
+		slog.ErrorContext(ctx, "could not stat file", log.Error(errors.WithStack(err)), slog.String("path", fsPath))
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		return
 	}
@@ -54,11 +56,11 @@ func (h *Handler) serveIndex(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get explorer data for the directory
-	data := h.getExplorerData(r.Context(), fsPath)
+	data := h.getExplorerData(ctx, fsPath)
 
 	// Render the full template
 	if err := templates.ExecuteTemplate(w, "index", data); err != nil {
-		slog.ErrorContext(r.Context(), "could not execute template", log.Error(errors.WithStack(err)))
+		slog.ErrorContext(ctx, "could not execute template", log.Error(errors.WithStack(err)))
 		return
 	}
 }

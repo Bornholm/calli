@@ -1,0 +1,28 @@
+
+{{define "body"}}
+<style>
+	html, body {
+		height: 100%;
+	}
+</style>
+<div class="is-flex is-justify-content-center is-align-items-center" style="height:100%">
+	<nav class="panel is-link" style="min-width: 33%">
+		<p class="panel-heading">
+			<span class="title">Calli</span><br />
+			<span class="subtitle">Veuillez vous authentifier</span>
+		</p>
+		{{ range .Providers }}
+			<a class="panel-block py-5" href={{ printf "/auth/providers/%s" .ID }} hx-boost="false">
+				<span class="panel-icon is-size-3">
+					<i class="{{ printf "fab %s" .Icon }}" aria-hidden="true"></i>
+				</span>
+				<span class="is-size-5">{{ .Label }}</span>
+			</a>
+		{{ end }}
+	</nav>
+</div>
+{{end}}
+
+{{define "login"}}
+{{template "base" .}}
+{{end}}

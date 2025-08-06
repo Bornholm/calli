@@ -12,17 +12,17 @@ const (
 	contextKeyUser contextKey = iota
 )
 
-func WithContextUser(parent context.Context, user *User) context.Context {
+func WithContextUser(parent context.Context, user User) context.Context {
 	return context.WithValue(parent, contextKeyUser, user)
 }
 
-func ContextUser(ctx context.Context) (*User, error) {
+func ContextUser(ctx context.Context) (User, error) {
 	raw := ctx.Value(contextKeyUser)
 	if raw == nil {
 		return nil, errors.New("no user in context")
 	}
 
-	user, ok := raw.(*User)
+	user, ok := raw.(User)
 	if !ok {
 		return nil, errors.New("unexpected context value type for user")
 	}

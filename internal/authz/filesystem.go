@@ -99,7 +99,8 @@ func (f *FileSystem) assertAuthorization(ctx context.Context, operation Operatio
 	}
 
 	env["operation"] = string(operation)
-	env["user"] = user.Name()
+	env["subject"] = user.UserSubject()
+	env["provider"] = user.UserProvider()
 	env["groups"] = slices.Collect(func(yield func(string) bool) {
 		for _, g := range user.Groups() {
 			if !yield(g.Name()) {

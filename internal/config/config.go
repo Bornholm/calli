@@ -1,6 +1,7 @@
 package config
 
 import (
+	"bytes"
 	"io"
 	"os"
 
@@ -13,6 +14,7 @@ type Config struct {
 	HTTP       HTTP       `yaml:"http"`
 	Filesystem Filesystem `yaml:"filesystem"`
 	Auth       Auth       `yaml:"auth"`
+	Store      Store      `yaml:"store"`
 }
 
 func NewDefaultConfig() *Config {
@@ -21,7 +23,22 @@ func NewDefaultConfig() *Config {
 		HTTP:       NewDefaultHTTPConfig(),
 		Filesystem: NewDefaultFilesystemConfig(),
 		Auth:       NewDefaultAuthConfig(),
+		Store:      NewDefaultStoreConfig(),
 	}
+}
+
+func Interpolate(conf *Config) error {
+	var buff bytes.Buffer
+
+	if err := Dump(&buff, conf); err != nil {
+		return errors.WithStack(err)
+	}
+
+	if err := Load(&buff, conf); err != nil {
+		return errors.WithStack(err)
+	}
+
+	return nil
 }
 
 func LoadFile(path string, conf *Config) error {
