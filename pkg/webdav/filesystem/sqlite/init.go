@@ -54,7 +54,7 @@ func CreateFileSystemFromOptions(options any) (webdav.FileSystem, error) {
 	pool := sqlitemigration.NewPool(opts.Path, schema, sqlitemigration.Options{
 		Flags: sqlite.OpenCreate | sqlite.OpenReadWrite | sqlite.OpenWAL,
 		PrepareConn: func(conn *sqlite.Conn) error {
-			return sqlitex.ExecuteTransient(conn, `PRAGMA foreign_keys = ON`, &sqlitex.ExecOptions{})
+			return sqlitex.ExecScript(conn, `PRAGMA foreign_keys = ON; PRAGMA auto_vacuum=FULL`)
 		},
 		OnError: func(e error) {
 			log.Println(e)

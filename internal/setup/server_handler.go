@@ -26,6 +26,8 @@ import (
 func NewHandlerFromConfig(ctx context.Context, conf *config.Config) (http.Handler, error) {
 	mux := &http.ServeMux{}
 
+	slogMiddleware := sloghttp.New(slog.Default())
+
 	fs, err := filesystem.New(filesystem.Type(conf.Filesystem.Type), conf.Filesystem.Options.Data)
 	if err != nil {
 		return nil, errors.WithStack(err)
@@ -52,7 +54,7 @@ func NewHandlerFromConfig(ctx context.Context, conf *config.Config) (http.Handle
 		return nil, errors.WithStack(err)
 	}
 
-	mux.Handle("/auth/", oauth2Handler)
+	mux.Handle("/auth/", slogMiddleware(oauth2Handler))
 
 	store, err := NewStoreFromConfig(ctx, conf)
 	if err != nil {
@@ -72,7 +74,7 @@ func NewHandlerFromConfig(ctx context.Context, conf *config.Config) (http.Handle
 		authn.WithOnAuthenticated(onAuthenticated),
 	)
 
-	rateLimiter := ratelimit.New(2, 5)
+	rateLimiter := ratelimit.New(10, 20)
 	rateLimiterMiddleware := rateLimiter.Middleware(func(r *http.Request) (string, error) {
 		user, err := authn.ContextUser(r.Context())
 		if err != nil {
@@ -82,7 +84,7 @@ func NewHandlerFromConfig(ctx context.Context, conf *config.Config) (http.Handle
 		return user.UserProvider() + "-" + user.UserSubject(), nil
 	})
 
-	mux.Handle("/dav/", davAuth(rateLimiterMiddleware(davHandler)))
+	mux.Handle("/dav/", davAuth(slogMiddleware(rateLimiterMiddleware(davHandler))))
 
 	uiAuth := authn.Chain(
 		authn.WithAuthenticators(
@@ -92,10 +94,10 @@ func NewHandlerFromConfig(ctx context.Context, conf *config.Config) (http.Handle
 	)
 
 	// Explorer handler with store for credential regeneration
-	mux.Handle("/", uiAuth(explorer.NewHandler(string(conf.HTTP.BaseURL), fs, store)))
+	mux.Handle("/", uiAuth(slogMiddleware(explorer.NewHandler(string(conf.HTTP.BaseURL), fs, store))))
 
 	adminHandler := admin.NewHandler("/admin", store)
 	mux.Handle("/admin/", uiAuth(adminHandler))
 
-	return sloghttp.New(slog.Default())(mux), nil
+	return mux, nil
 }

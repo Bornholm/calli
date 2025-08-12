@@ -187,25 +187,62 @@ func (f *FileSystem) RemoveAll(ctx context.Context, name string) error {
 	}
 	defer f.pool.Put(conn)
 
-	if info.IsDir() {
-		// For directories, we need to remove all children as well
-		err = sqlitex.Execute(conn, `
-			DELETE FROM files 
-			WHERE path = ? OR path LIKE ?
-		`, &sqlitex.ExecOptions{
-			Args: []interface{}{name, strings.TrimSuffix(name, "/") + "/" + "%"},
-		})
-	} else {
-		// For files, just remove the specific path
-		err = sqlitex.Execute(conn, `
-			DELETE FROM file_contents
-			WHERE path = ? OR path LIKE ?
-		`, &sqlitex.ExecOptions{
-			Args: []interface{}{name, strings.TrimSuffix(name, "/") + "/" + "%"},
-		})
-	}
+	// Use a transaction to make sure all operations are atomic
+	removeErr := func() error {
+		// Use Save for automatic transaction management
+		defer sqlitex.Save(conn)(&err)
 
-	return errors.WithStack(err)
+		if info.IsDir() {
+			// For directories, we need to remove all children as well
+			err = sqlitex.Execute(conn, `
+				DELETE FROM files 
+				WHERE path = ? OR path LIKE ?
+			`, &sqlitex.ExecOptions{
+				Args: []interface{}{name, strings.TrimSuffix(name, "/") + "/" + "%"},
+			})
+			if err != nil {
+				return errors.WithStack(err)
+			}
+
+			// Also remove any associated file contents
+			err = sqlitex.Execute(conn, `
+				DELETE FROM file_contents
+				WHERE path = ? OR path LIKE ?
+			`, &sqlitex.ExecOptions{
+				Args: []interface{}{name, strings.TrimSuffix(name, "/") + "/" + "%"},
+			})
+			if err != nil {
+				return errors.WithStack(err)
+			}
+		} else {
+			// For files, remove from both tables
+
+			// Delete from file_contents
+			err = sqlitex.Execute(conn, `
+				DELETE FROM file_contents
+				WHERE path = ?
+			`, &sqlitex.ExecOptions{
+				Args: []interface{}{name},
+			})
+			if err != nil {
+				return errors.WithStack(err)
+			}
+
+			// Delete from files
+			err = sqlitex.Execute(conn, `
+				DELETE FROM files
+				WHERE path = ?
+			`, &sqlitex.ExecOptions{
+				Args: []interface{}{name},
+			})
+			if err != nil {
+				return errors.WithStack(err)
+			}
+		}
+		return nil
+	}()
+
+	return removeErr
 }
 
 // Rename implements webdav.FileSystem.

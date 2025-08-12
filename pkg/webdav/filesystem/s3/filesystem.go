@@ -18,9 +18,20 @@ const (
 	keepDirFile = ".keepdir"
 )
 
+// FileSystemConfig contains configuration options for the S3 filesystem
+type FileSystemConfig struct {
+	// BufferSize is the size of each buffer in bytes (default: 1MB)
+	BufferSize int
+	// BufferCount is the maximum number of buffers to use (default: 16)
+	// This controls the maximum memory usage for uploads: BufferSize * BufferCount
+	BufferCount int
+}
+
+// FileSystem implements the webdav.FileSystem interface for S3 storage
 type FileSystem struct {
 	client *minio.Client
 	bucket string
+	config FileSystemConfig
 }
 
 // Mkdir implements webdav.FileSystem.
@@ -52,9 +63,22 @@ func (f *FileSystem) OpenFile(ctx context.Context, name string, flag int, perm o
 		return nil, errors.WithStack(filesystem.ErrNotSupported)
 	}
 
+	// Configure buffer options for file uploads
+	bufferSize := defaultBufferSize
+	bufferCount := defaultBufferCount
+
+	if f.config.BufferSize > 0 {
+		bufferSize = f.config.BufferSize
+	}
+
+	if f.config.BufferCount > 0 {
+		bufferCount = f.config.BufferCount
+	}
+
+	// Create file with memory-capped upload
 	file, err := NewFile(ctx, f.client, f.bucket, name, flag, minio.PutObjectOptions{
 		ConcurrentStreamParts: true,
-	})
+	}, bufferSize, bufferCount)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return nil, os.ErrNotExist
@@ -168,10 +192,21 @@ func (f *FileSystem) Stat(ctx context.Context, name string) (os.FileInfo, error)
 	return fileInfo, nil
 }
 
+// NewFileSystem creates a new S3 filesystem with the given client and bucket
 func NewFileSystem(client *minio.Client, bucket string) *FileSystem {
 	return &FileSystem{
 		client: client,
 		bucket: bucket,
+		config: FileSystemConfig{},
+	}
+}
+
+// NewFileSystemWithConfig creates a new S3 filesystem with custom configuration
+func NewFileSystemWithConfig(client *minio.Client, bucket string, config FileSystemConfig) *FileSystem {
+	return &FileSystem{
+		client: client,
+		bucket: bucket,
+		config: config,
 	}
 }
 
