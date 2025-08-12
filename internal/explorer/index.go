@@ -67,7 +67,7 @@ func (h *Handler) serveIndex(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Get explorer data for the directory
-	data := h.getExplorerData(ctx, dirFile, fileInfo)
+	data := h.getExplorerData(ctx, fsPath, dirFile, fileInfo)
 
 	// Check for flash message in query parameters
 	if flashMsg := r.URL.Query().Get("flash"); flashMsg != "" {
@@ -82,7 +82,7 @@ func (h *Handler) serveIndex(w http.ResponseWriter, r *http.Request) {
 }
 
 // getExplorerData retrieves directory contents and creates template data
-func (h *Handler) getExplorerData(ctx context.Context, dirFile webdav.File, fileInfo fs.FileInfo) FileExplorerTemplateData {
+func (h *Handler) getExplorerData(ctx context.Context, fsPath string, dirFile webdav.File, fileInfo fs.FileInfo) FileExplorerTemplateData {
 	// Default to empty data structure
 	data := FileExplorerTemplateData{
 		NavbarTemplateData: ui.NavbarTemplateData{
@@ -135,8 +135,6 @@ func (h *Handler) getExplorerData(ctx context.Context, dirFile webdav.File, file
 			data.WebDAVURL = webdavURL.String()
 		}
 	}
-
-	fsPath := fileInfo.Name()
 
 	// List directory contents
 	files, err := dirFile.Readdir(-1)

@@ -37,21 +37,23 @@ func NewOnAuthenticatedFromConfig(ctx context.Context, conf *config.Config) (fun
 			storeUser = typedUser
 		}
 
-		st.Do(ctx, func(conn *sqlite.Conn) error {
-			err := sqlitex.Execute(conn, `UPDATE users SET connected_at = ? WHERE id = ?`, &sqlitex.ExecOptions{
-				Args: []any{time.Now().UTC().Unix(), storeUser.ID},
+		if time.Since(storeUser.ConnectedAt) > time.Minute {
+			st.Do(ctx, func(conn *sqlite.Conn) error {
+				err := sqlitex.Execute(conn, `UPDATE users SET connected_at = ? WHERE id = ?`, &sqlitex.ExecOptions{
+					Args: []any{time.Now().UTC().Unix(), storeUser.ID},
+				})
+				if err != nil {
+					return errors.WithStack(err)
+				}
+
+				return nil
 			})
 			if err != nil {
-				return errors.WithStack(err)
+				return nil, errors.WithStack(err)
 			}
-
-			return nil
-		})
-		if err != nil {
-			return nil, errors.WithStack(err)
 		}
 
-		ctx = authz.WithContextUser(r.Context(), storeUser)
+		ctx = authz.WithContextUser(ctx, storeUser)
 
 		return r.WithContext(ctx), nil
 	}, nil

@@ -12,12 +12,15 @@ import (
 	"github.com/bornholm/calli/internal/authz"
 	"github.com/bornholm/calli/internal/config"
 	"github.com/bornholm/calli/internal/explorer"
+	"github.com/bornholm/calli/internal/ratelimit"
 	"github.com/bornholm/calli/pkg/log"
 	"github.com/bornholm/calli/pkg/webdav/filesystem"
 	"github.com/pkg/errors"
 	"golang.org/x/net/webdav"
 
 	wd "github.com/bornholm/calli/pkg/webdav"
+
+	sloghttp "github.com/samber/slog-http"
 )
 
 func NewHandlerFromConfig(ctx context.Context, conf *config.Config) (http.Handler, error) {
@@ -36,11 +39,8 @@ func NewHandlerFromConfig(ctx context.Context, conf *config.Config) (http.Handle
 		LockSystem: webdav.NewMemLS(),
 		Prefix:     "/dav/",
 		Logger: func(r *http.Request, err error) {
-			ctx := r.Context()
-			ctx = log.WithAttrs(ctx, slog.String("method", r.Method), slog.String("path", r.URL.Path))
-			slog.InfoContext(ctx, "http request")
-
 			if err != nil && !errors.Is(err, os.ErrNotExist) {
+				ctx := r.Context()
 				slog.ErrorContext(ctx, err.Error(), log.Error(err))
 				return
 			}
@@ -72,7 +72,17 @@ func NewHandlerFromConfig(ctx context.Context, conf *config.Config) (http.Handle
 		authn.WithOnAuthenticated(onAuthenticated),
 	)
 
-	mux.Handle("/dav/", davAuth(davHandler))
+	rateLimiter := ratelimit.New(2, 5)
+	rateLimiterMiddleware := rateLimiter.Middleware(func(r *http.Request) (string, error) {
+		user, err := authn.ContextUser(r.Context())
+		if err != nil {
+			return "", errors.WithStack(err)
+		}
+
+		return user.UserProvider() + "-" + user.UserSubject(), nil
+	})
+
+	mux.Handle("/dav/", davAuth(rateLimiterMiddleware(davHandler)))
 
 	uiAuth := authn.Chain(
 		authn.WithAuthenticators(
@@ -87,5 +97,5 @@ func NewHandlerFromConfig(ctx context.Context, conf *config.Config) (http.Handle
 	adminHandler := admin.NewHandler("/admin", store)
 	mux.Handle("/admin/", uiAuth(adminHandler))
 
-	return mux, nil
+	return sloghttp.New(slog.Default())(mux), nil
 }

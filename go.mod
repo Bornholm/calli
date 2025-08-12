@@ -15,10 +15,12 @@ require (
 	github.com/minio/minio-go/v7 v7.0.94
 	github.com/pkg/errors v0.9.1
 	github.com/rs/xid v1.6.0
+	github.com/samber/slog-http v1.7.0
 	github.com/testcontainers/testcontainers-go v0.37.0
 	github.com/testcontainers/testcontainers-go/modules/minio v0.37.0
 	golang.org/x/crypto v0.40.0
 	golang.org/x/net v0.42.0
+	golang.org/x/time v0.12.0
 	zombiezen.com/go/sqlite v1.4.2
 )
 
@@ -101,7 +103,6 @@ require (
 	golang.org/x/oauth2 v0.17.0 // indirect
 	golang.org/x/sys v0.34.0 // indirect
 	golang.org/x/text v0.27.0 // indirect
-	golang.org/x/time v0.11.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
