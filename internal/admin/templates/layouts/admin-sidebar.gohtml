@@ -1,0 +1,57 @@
+{{define "admin-sidebar"}}
+<div class="columns">
+  <!-- Sidebar -->
+  <div class="column is-one-quarter">
+    <aside class="menu">
+      <p class="menu-label">
+        Menu
+      </p>
+      <ul class="menu-list">
+        <li>
+          <a href="/admin" {{if eq .Path "index"}}class="is-active"{{end}}>
+            <span class="icon">
+              <i class="fas fa-tachometer-alt"></i>
+            </span>
+            <span>Dashboard</span>
+          </a>
+        </li>
+        <li>
+          <a href="/admin/users" {{if eq .Path "users"}}class="is-active"{{end}}>
+            <span class="icon">
+              <i class="fas fa-users"></i>
+            </span>
+            <span>Users</span>
+          </a>
+        </li>
+        <li>
+          <a href="/admin/groups" {{if eq .Path "groups"}}class="is-active"{{end}}>
+            <span class="icon">
+              <i class="fas fa-layer-group"></i>
+            </span>
+            <span>Groups</span>
+          </a>
+        </li>
+      </ul>
+    </aside>
+  </div>
+  
+  <!-- Main content -->
+  <div class="column">
+    {{if eq .Path "index"}}
+      {{template "admin-dashboard" .}}
+    {{else if eq .Path "users"}}
+      {{template "users-list" .}}
+    {{else if eq .Path "users-new"}}
+      {{template "user-form" .}}
+    {{else if eq .Path "users-edit"}}
+      {{template "user-form" .}}
+    {{else if eq .Path "users-delete"}}
+      {{template "user-delete" .}}
+    {{else if eq .Path "groups"}}
+      {{template "groups-list" .}}
+    {{else if eq .Path "rules"}}
+      {{template "rules-list" .}}
+    {{end}}
+  </div>
+</div>
+{{end}}

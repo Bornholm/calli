@@ -27,26 +27,29 @@ func Chain(funcs ...MiddlewareOptionFunc) func(http.Handler) http.Handler {
 	opts := NewMiddlewareOptions(funcs...)
 	return func(next http.Handler) http.Handler {
 		fn := func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
 			for _, auth := range opts.Authenticators {
 				user, err := auth.Authenticate(w, r)
 				if errors.Is(err, ErrCancel) {
 					return
 				}
 
-				if user != nil {
-					ctx := setContextUser(r.Context(), user)
-					ctx = log.WithAttrs(ctx, slog.String("user", fmt.Sprintf("%s@%s", user.UserSubject(), user.UserProvider())))
-					r = r.WithContext(ctx)
+				if user == nil {
+					continue
+				}
 
-					rr, err := opts.OnAuthenticated(r, user)
-					if err != nil {
-						opts.OnError(w, r, err)
-						return
-					}
+				ctx = setContextUser(ctx, user)
+				ctx = log.WithAttrs(ctx, slog.String("user", fmt.Sprintf("%s@%s", user.UserSubject(), user.UserProvider())))
+				r = r.WithContext(ctx)
 
-					next.ServeHTTP(w, rr)
+				rr, err := opts.OnAuthenticated(r, user)
+				if err != nil {
+					opts.OnError(w, r, err)
 					return
 				}
+
+				next.ServeHTTP(w, rr)
+				return
 			}
 
 			opts.UnauthorizedHandler.ServeHTTP(w, r)

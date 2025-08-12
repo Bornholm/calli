@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/bornholm/calli/internal/admin"
 	"github.com/bornholm/calli/internal/authn"
 	"github.com/bornholm/calli/internal/authn/basic"
 	"github.com/bornholm/calli/internal/authz"
@@ -58,28 +59,33 @@ func NewHandlerFromConfig(ctx context.Context, conf *config.Config) (http.Handle
 		return nil, errors.WithStack(err)
 	}
 
-	davAuth := authn.Chain(
-		authn.WithAuthenticators(
-			oauth2Handler.Authenticator(false),
-			basic.NewAuthenticator(store),
-		),
-	)
-
-	mux.Handle("/dav/", davAuth(davHandler))
-
 	onAuthenticated, err := NewOnAuthenticatedFromConfig(ctx, conf)
 	if err != nil {
 		return nil, errors.WithStack(err)
 	}
 
-	explorerAuth := authn.Chain(
+	davAuth := authn.Chain(
+		authn.WithAuthenticators(
+			oauth2Handler.Authenticator(false),
+			basic.NewAuthenticator(store),
+		),
+		authn.WithOnAuthenticated(onAuthenticated),
+	)
+
+	mux.Handle("/dav/", davAuth(davHandler))
+
+	uiAuth := authn.Chain(
 		authn.WithAuthenticators(
 			oauth2Handler.Authenticator(true),
 		),
 		authn.WithOnAuthenticated(onAuthenticated),
 	)
 
-	mux.Handle("/", explorerAuth(explorer.NewHandler(fs)))
+	// Explorer handler with store for credential regeneration
+	mux.Handle("/", uiAuth(explorer.NewHandler(string(conf.HTTP.BaseURL), fs, store)))
+
+	adminHandler := admin.NewHandler("/admin", store)
+	mux.Handle("/admin/", uiAuth(adminHandler))
 
 	return mux, nil
 }

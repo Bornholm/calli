@@ -1,0 +1,72 @@
+{{define "user-form"}}
+<div class="box">
+  <h1 class="title is-4">
+    <i class="fas fa-user"></i> {{.FormTitle}}
+  </h1>
+  
+  {{if .ErrorMessage}}
+  <div class="notification is-danger">
+    {{.ErrorMessage}}
+  </div>
+  {{end}}
+  
+  {{if .SuccessMessage}}
+  <div class="notification is-success">
+    {{.SuccessMessage}}
+  </div>
+  {{end}}
+  
+  <form method="POST" action="{{.FormAction}}">
+    <div class="field">
+      <label class="label">Email</label>
+      <div class="control">
+        <p class="input">{{.User.Email}}</p>
+      </div>
+    </div>
+    
+    <div class="field">
+      <label class="label">Nickname</label>
+      <div class="control">
+        <p class="input">{{.User.Nickname}}</p>
+      </div>
+    </div>
+    
+    <div class="field">
+      <label class="label">Provider</label>
+      <div class="control">
+        <p class="input">{{.User.Provider}}</p>
+      </div>
+    </div>
+    
+    <div class="field">
+      <label class="label">Subject</label>
+      <div class="control">
+        <p class="input">{{.User.Subject}}</p>
+      </div>
+    </div>
+    
+    <div class="field">
+      <label class="label">Groups</label>
+      <div class="control">
+        {{range .Groups}}
+        <label class="checkbox mr-4">
+          <input type="checkbox" name="groups" value="{{.ID}}"
+            {{ $id := .ID }}
+            {{range $.SelectedGroups}}{{if eq . $id}}checked{{end}}{{end}}>
+          {{.Name}}
+        </label>
+        {{end}}
+      </div>
+    </div>
+    
+    <div class="field is-grouped mt-5">
+      <div class="control">
+        <button type="submit" class="button is-primary">{{.SubmitBtnText}}</button>
+      </div>
+      <div class="control">
+        <a href="/admin/users" class="button is-light">Cancel</a>
+      </div>
+    </div>
+  </form>
+</div>
+{{end}}

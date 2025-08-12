@@ -102,7 +102,7 @@ func (f *FileSystem) assertAuthorization(ctx context.Context, operation Operatio
 	env["subject"] = user.UserSubject()
 	env["provider"] = user.UserProvider()
 	env["groups"] = slices.Collect(func(yield func(string) bool) {
-		for _, g := range user.Groups() {
+		for _, g := range user.FileSystemGroups() {
 			if !yield(g.Name()) {
 				return
 			}
@@ -115,7 +115,7 @@ func (f *FileSystem) assertAuthorization(ctx context.Context, operation Operatio
 	env["OP_RENAME"] = string(OperationRename)
 	env["OP_STAT"] = string(OperationStat)
 
-	for _, r := range user.Rules() {
+	for _, r := range user.FileSystemRules() {
 		slog.DebugContext(ctx, "executing rule", slog.Any("rule", r), slog.Any("env", env))
 
 		allowed, err := r.Exec(env)

@@ -79,7 +79,7 @@
         {{range .Files}}
         <tr>
           <td>
-            <a href="/dav{{.Path}}" target="_blank">
+            <a href="/dav/{{.Path}}" target="_blank">
               <span class="icon">
                 {{if .IsImage}}
                   <i class="fas fa-image has-text-info"></i>
@@ -135,13 +135,53 @@
 {{end}}
 
 {{define "body"}}
+<!-- Use shared navbar -->
+{{template "navbar" .}}
+
 <section class="section">
   <div class="container">
+    {{if .FlashMessage}}
+    <div class="notification is-success is-light">
+      <button class="delete"></button>
+      <strong>Success!</strong> {{.FlashMessage}}
+    </div>
+    {{end}}
+    
     <div id="explorer-content">
       {{template "file-list" .}}
     </div>
+    <details class="my-5 mx-3">
+      <summary><span class="title is-size-6 is-clickable">WebDAV</span></summary>
+      <div class="columns my-3">
+        <div class="column">
+          <pre><code><a target="_blank" href="{{ .WebDAVURL }}">{{ .WebDAVURL }}</a></code></pre>
+          <p class="help is-italic">Use this URL in your file explorer to create a WebDAV mountpoint.</p>
+        </div>
+        <div class="column is-narrow">
+          <form action="/actions/regenerate-password" method="POST">
+            <button type="submit" class="button is-primary">
+              <span class="icon">
+                <i class="fas fa-sync-alt"></i>
+              </span>
+              <span>Regenerate password</span>
+            </button>
+          </form>
+        </div>
+      </div>
+    </details>
   </div>
 </section>
+
+<script>
+  // Add event listener to handle notification deletion
+  document.addEventListener('DOMContentLoaded', () => {
+    (document.querySelectorAll('.notification .delete') || []).forEach(($delete) => {
+      $delete.addEventListener('click', () => {
+        $delete.parentNode.remove();
+      });
+    });
+  });
+</script>
 {{end}}
 
 {{define "index"}}

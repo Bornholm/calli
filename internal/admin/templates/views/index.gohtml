@@ -1,0 +1,198 @@
+{{define "admin-dashboard"}}
+<div>
+  <div class="columns">
+    <div class="column">
+      <div class="box has-text-centered">
+        <p class="heading">Users</p>
+        <p class="title">{{.UserCount}}</p>
+        <a href="/admin/users" class="button is-primary is-small">
+          <span class="icon"><i class="fas fa-users"></i></span>
+          <span>Manage Users</span>
+        </a>
+      </div>
+    </div>
+    <div class="column">
+      <div class="box has-text-centered">
+        <p class="heading">Groups</p>
+        <p class="title">{{.GroupCount}}</p>
+        <a href="/admin/groups" class="button is-info is-small">
+          <span class="icon"><i class="fas fa-layer-group"></i></span>
+          <span>Manage Groups</span>
+        </a>
+      </div>
+    </div>
+    <div class="column">
+      <div class="box has-text-centered">
+        <p class="heading">Rules</p>
+        <p class="title">{{.RuleCount}}</p>
+        <a href="/admin/rules" class="button is-warning is-small">
+          <span class="icon"><i class="fas fa-shield-alt"></i></span>
+          <span>Manage Rules</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+{{end}}
+
+{{define "groups-list"}}
+<div class="box">
+  <h1 class="title is-4">
+    <i class="fas fa-layer-group"></i> Groups
+  </h1>
+  <div class="table-container">
+    <table class="table is-fullwidth is-hoverable">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Name</th>
+          <th>Rules</th>
+          <th>Created</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .Groups}}
+        <tr>
+          <td>{{.ID}}</td>
+          <td>{{.Name}}</td>
+          <td>{{.RuleCount}}</td>
+          <td>{{.HumanCreatedAt}}</td>
+          <td>
+            <div class="buttons are-small">
+              <a href="/admin/groups/{{.ID}}/edit" class="button is-link">
+                <span class="icon"><i class="fas fa-edit"></i></span>
+              </a>
+              <a href="/admin/groups/{{.ID}}/delete" class="button is-danger">
+                <span class="icon"><i class="fas fa-trash"></i></span>
+              </a>
+            </div>
+          </td>
+        </tr>
+        {{end}}
+        {{if eq (len .Groups) 0}}
+        <tr>
+          <td colspan="5" class="has-text-centered">
+            <p class="has-text-grey">No groups found</p>
+          </td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+  <div class="buttons mt-4">
+    <a href="/admin/groups/new" class="button is-primary">
+      <span class="icon"><i class="fas fa-plus"></i></span>
+      <span>Add Group</span>
+    </a>
+  </div>
+</div>
+{{end}}
+
+{{define "rules-list"}}
+<div class="box">
+  <h1 class="title is-4">
+    <i class="fas fa-shield-alt"></i> Rules
+  </h1>
+  <div class="table-container">
+    <table class="table is-fullwidth is-hoverable">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Group</th>
+          <th>Script</th>
+          <th>Order</th>
+          <th>Created</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{range .Rules}}
+        <tr>
+          <td>{{.ID}}</td>
+          <td>{{.GroupName}}</td>
+          <td><code>{{.Script}}</code></td>
+          <td>{{.SortOrder}}</td>
+          <td>{{.HumanCreatedAt}}</td>
+          <td>
+            <div class="buttons are-small">
+              <a href="/admin/rules/{{.ID}}/edit" class="button is-link">
+                <span class="icon"><i class="fas fa-edit"></i></span>
+              </a>
+              <a href="/admin/rules/{{.ID}}/delete" class="button is-danger">
+                <span class="icon"><i class="fas fa-trash"></i></span>
+              </a>
+            </div>
+          </td>
+        </tr>
+        {{end}}
+        {{if eq (len .Rules) 0}}
+        <tr>
+          <td colspan="6" class="has-text-centered">
+            <p class="has-text-grey">No rules found</p>
+          </td>
+        </tr>
+        {{end}}
+      </tbody>
+    </table>
+  </div>
+  <div class="buttons mt-4">
+    <a href="/admin/rules/new" class="button is-primary">
+      <span class="icon"><i class="fas fa-plus"></i></span>
+      <span>Add Rule</span>
+    </a>
+  </div>
+</div>
+{{end}}
+
+{{define "body"}}
+<!-- Use shared navbar -->
+{{template "navbar" .}}
+
+<section class="section">
+
+  <div class="container">
+    <!-- Use admin sidebar template that includes both sidebar and content -->
+    {{template "admin-sidebar" .}}
+  </div>
+</section>
+{{end}}
+
+{{define "user-delete"}}
+<div class="box">
+  <h1 class="title is-4">
+    <i class="fas fa-trash"></i> Delete User
+  </h1>
+  
+  {{if .ErrorMessage}}
+  <div class="notification is-danger">
+    {{.ErrorMessage}}
+  </div>
+  {{end}}
+  
+  <div class="notification is-warning">
+    <p>Are you sure you want to delete the following user?</p>
+    <ul>
+      <li><strong>ID:</strong> {{.User.ID}}</li>
+      <li><strong>Email:</strong> {{.User.Email}}</li>
+      <li><strong>Nickname:</strong> {{.User.Nickname}}</li>
+    </ul>
+    <p class="mt-3"><strong>This action cannot be undone.</strong></p>
+  </div>
+  
+  <form method="POST" action="/admin/users/{{.User.ID}}/delete">
+    <div class="field is-grouped">
+      <div class="control">
+        <button type="submit" class="button is-danger">Confirm Delete</button>
+      </div>
+      <div class="control">
+        <a href="/admin/users" class="button is-light">Cancel</a>
+      </div>
+    </div>
+  </form>
+</div>
+{{end}}
+
+{{define "index"}}
+{{template "base" .}}
+{{end}}

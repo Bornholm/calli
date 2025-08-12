@@ -48,11 +48,16 @@ type FileTemplateData struct {
 // FileExplorerTemplateData contains the data needed to render the file explorer view
 type FileExplorerTemplateData struct {
 	ui.HeadTemplateData
+	ui.NavbarTemplateData
 	Path            string
 	ParentPath      string
 	BreadcrumbItems []string
 	Directories     []FileTemplateData
 	Files           []FileTemplateData
+	IsAdmin         bool
+	Username        string
+	WebDAVURL       string
+	FlashMessage    string
 }
 
 // NewFileTemplateData creates a new file data structure from an os.FileInfo

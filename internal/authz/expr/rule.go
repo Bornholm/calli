@@ -2,7 +2,6 @@ package expr
 
 import (
 	"os"
-	"sync"
 
 	"github.com/bornholm/calli/internal/authz"
 	"github.com/expr-lang/expr"
@@ -11,11 +10,7 @@ import (
 )
 
 type Rule struct {
-	script  string
-	program *vm.Program
-
-	compileOnce sync.Once
-	compileErr  error
+	script string
 }
 
 // Exec implements authz.Rule.
@@ -52,20 +47,12 @@ func (r *Rule) Exec(env map[string]any) (bool, error) {
 }
 
 func (r *Rule) getProgram() (*vm.Program, error) {
-	r.compileOnce.Do(func() {
-		program, err := expr.Compile(r.script, expr.AsBool(), WithRuleAPI())
-		if err != nil {
-			r.compileErr = errors.WithStack(err)
-			return
-		}
-
-		r.program = program
-	})
-	if r.compileErr != nil {
-		return nil, errors.WithStack(r.compileErr)
+	program, err := defaultCache.Get(r.script)
+	if err != nil {
+		return nil, errors.WithStack(err)
 	}
 
-	return r.program, nil
+	return program, nil
 }
 
 func (r *Rule) String() string {

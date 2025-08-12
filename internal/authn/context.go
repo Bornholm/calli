@@ -6,17 +6,19 @@ import (
 	"github.com/pkg/errors"
 )
 
-const keyUser = "user"
+type contextKey string
 
-func ContextUser(ctx context.Context) User {
-	user, ok := ctx.Value(keyUser).(User)
+const contextKeyUser contextKey = "authnUser"
+
+func ContextUser(ctx context.Context) (User, error) {
+	user, ok := ctx.Value(contextKeyUser).(User)
 	if !ok {
-		panic(errors.New("no user in context"))
+		return nil, errors.New("no user in context")
 	}
 
-	return user
+	return user, nil
 }
 
 func setContextUser(ctx context.Context, user User) context.Context {
-	return context.WithValue(ctx, keyUser, user)
+	return context.WithValue(ctx, contextKeyUser, user)
 }

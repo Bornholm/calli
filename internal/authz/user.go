@@ -4,8 +4,8 @@ import "github.com/bornholm/calli/internal/authn"
 
 type User interface {
 	authn.User
-	Rules() []Rule
-	Groups() []*Group
+	FileSystemRules() []Rule
+	FileSystemGroups() []*Group
 }
 
 type Group struct {

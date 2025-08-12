@@ -6,10 +6,10 @@ import (
 	"github.com/pkg/errors"
 )
 
-type contextKey int
+type contextKey string
 
 const (
-	contextKeyUser contextKey = iota
+	contextKeyUser contextKey = "authzUser"
 )
 
 func WithContextUser(parent context.Context, user User) context.Context {
