@@ -20,11 +20,10 @@ const (
 
 // FileSystemConfig contains configuration options for the S3 filesystem
 type FileSystemConfig struct {
-	// BufferSize is the size of each buffer in bytes (default: 1MB)
-	BufferSize int
-	// BufferCount is the maximum number of buffers to use (default: 16)
-	// This controls the maximum memory usage for uploads: BufferSize * BufferCount
-	BufferCount int
+	// This controls the maximum concurrent uploads
+	MaxFiles int
+	// This controls the maximum disk space used for temporary files
+	MaxTotalTempSize int64
 }
 
 // FileSystem implements the webdav.FileSystem interface for S3 storage
@@ -63,22 +62,22 @@ func (f *FileSystem) OpenFile(ctx context.Context, name string, flag int, perm o
 		return nil, errors.WithStack(filesystem.ErrNotSupported)
 	}
 
-	// Configure buffer options for file uploads
-	bufferSize := defaultBufferSize
-	bufferCount := defaultBufferCount
+	// Configure options for file uploads
+	maxFiles := defaultMaxFiles
+	var maxTotalTempSize int64 = defaultMaxTotalSize
 
-	if f.config.BufferSize > 0 {
-		bufferSize = f.config.BufferSize
+	if f.config.MaxFiles > 0 {
+		maxFiles = f.config.MaxFiles
 	}
 
-	if f.config.BufferCount > 0 {
-		bufferCount = f.config.BufferCount
+	if f.config.MaxTotalTempSize > 0 {
+		maxTotalTempSize = f.config.MaxTotalTempSize
 	}
 
-	// Create file with memory-capped upload
+	// Create file with temp file-based buffering
 	file, err := NewFile(ctx, f.client, f.bucket, name, flag, minio.PutObjectOptions{
 		ConcurrentStreamParts: true,
-	}, bufferSize, bufferCount)
+	}, maxFiles, maxTotalTempSize)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
 			return nil, os.ErrNotExist
