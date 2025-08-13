@@ -12,6 +12,7 @@ import (
 	"github.com/bornholm/calli/internal/authz"
 	"github.com/bornholm/calli/internal/config"
 	"github.com/bornholm/calli/internal/explorer"
+	"github.com/bornholm/calli/internal/pprof"
 	"github.com/bornholm/calli/internal/ratelimit"
 	"github.com/bornholm/calli/pkg/log"
 	"github.com/bornholm/calli/pkg/webdav/filesystem"
@@ -98,6 +99,8 @@ func NewHandlerFromConfig(ctx context.Context, conf *config.Config) (http.Handle
 
 	adminHandler := admin.NewHandler("/admin", store)
 	mux.Handle("/admin/", uiAuth(adminHandler))
+
+	mux.Handle("/pprof/", pprof.NewHandler("/pprof"))
 
 	return mux, nil
 }
